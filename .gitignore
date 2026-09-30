@@ -1,0 +1,53 @@
+# Dependencias
+node_modules/
+*/node_modules/
+.pnp
+.pnp.js
+
+# Compilación y artefactos de build
+dist/
+*/dist/
+build/
+*/build/
+
+# Cobertura y reportes de pruebas
+coverage/
+*/coverage/
+*.lcov
+
+# Variables de entorno y secretos (ISO 27001)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+
+# Logs del sistema y gestores de paquetes
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.log
+
+# Archivos de sistema operativo y editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Temporales y caches de frameworks
+.turbo
+.eslintcache
+.stylelintcache
+.cache/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/

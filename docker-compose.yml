@@ -1,0 +1,105 @@
+services:
+  # ============================================================================
+  # 1. Base de Datos Relacional PostgreSQL 15 (Conformidad ISO 27001 / ACID)
+  # ============================================================================
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_DATABASE:-prestamos_apiux}
+    ports:
+      - "${DB_PORT:-25432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-prestamos_apiux}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - apiux_network
+
+  # ============================================================================
+  # 2. Backend REST API NestJS (TypeScript, RBAC, Métricas Prometheus, Auditoría)
+  # ============================================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_USER: ${DB_USERNAME:-postgres}
+      DATABASE_PASSWORD: ${DB_PASSWORD:-postgres}
+      DATABASE_NAME: ${DB_DATABASE:-prestamos_apiux}
+      DATABASE_SSL: "false"
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${DB_USERNAME:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_DATABASE: ${DB_DATABASE:-prestamos_apiux}
+      AZURE_TENANT_ID: ${AZURE_TENANT_ID:-a8947e4b-76b3-469b-871d-5582bf4ad391}
+      AZURE_CLIENT_ID: ${AZURE_CLIENT_ID:-3f87b8f9-906d-495c-9db6-7cbdfa024cb5}
+      AZURE_CLIENT_SECRET: ${AZURE_CLIENT_SECRET:-dummy_client_secret}
+      JWT_SECRET: ${JWT_SECRET:-clave-secreta-jwt-super-segura-apiux-2026-min32caracteres}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-8h}
+      GLOBAL_PREFIX: api/v1
+      CORS_ORIGIN: "http://localhost:23080,http://localhost:5173,http://localhost:3000"
+      SMTP_HOST: ${SMTP_HOST:-maildev}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_SECURE: "false"
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-notificaciones-ti@apiux.com}
+    ports:
+      - "8000:3000"
+      - "${BACKEND_PORT:-23000}:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:3000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    networks:
+      - apiux_network
+
+  # ============================================================================
+  # 3. Frontend SPA Nginx (React 18, Vite, Tailwind CSS, Heroicons)
+  # ============================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+      - "${FRONTEND_PORT:-23080}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:80/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - apiux_network
+
+volumes:
+  postgres_data:
+    name: apiux_prestamos_postgres_data
+
+networks:
+  apiux_network:
+    name: apiux_prestamos_network
+    driver: bridge

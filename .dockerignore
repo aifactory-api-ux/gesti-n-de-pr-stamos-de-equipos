@@ -1,0 +1,17 @@
+node_modules
+*/node_modules
+dist
+build
+.git
+.gitignore
+.dockerignore
+.env
+.env.*
+!.env.example
+*.log
+coverage
+*/coverage
+.vscode
+.idea
+run.sh
+README.md

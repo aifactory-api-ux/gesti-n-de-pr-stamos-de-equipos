@@ -1,0 +1,734 @@
+openapi: 3.1.0
+info:
+  title: Sistema de Gestión de Préstamos TI API
+  version: 1.0.0
+  description: API REST para la gestión de inventario y préstamos de equipos TI.
+servers:
+  - url: /
+    description: Servidor principal
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RolUsuario:
+      type: string
+      enum:
+        - colaborador
+        - administrador_ti
+    EstadoUsuario:
+      type: string
+      enum:
+        - activo
+        - inactivo
+    EstadoEquipo:
+      type: string
+      enum:
+        - disponible
+        - prestado
+        - en_mantencion
+        - de_baja
+    EstadoSolicitud:
+      type: string
+      enum:
+        - pendiente
+        - aprobada
+        - rechazada
+    EstadoPrestamo:
+      type: string
+      enum:
+        - activo
+        - devuelto
+        - vencido
+    Usuario:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        nombre_completo:
+          type: string
+        rol:
+          $ref: '#/components/schemas/RolUsuario'
+        estado:
+          $ref: '#/components/schemas/EstadoUsuario'
+        creado_en:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - nombre_completo
+        - rol
+        - estado
+        - creado_en
+    Categoria:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        nombre:
+          type: string
+        descripcion:
+          type:
+            - string
+            - 'null'
+      required:
+        - id
+        - nombre
+    Equipo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        codigo_inventario:
+          type: string
+        categoria_id:
+          type: string
+          format: uuid
+        categoria:
+          $ref: '#/components/schemas/Categoria'
+        marca:
+          type: string
+        modelo:
+          type: string
+        numero_serie:
+          type: string
+        estado:
+          $ref: '#/components/schemas/EstadoEquipo'
+        creado_en:
+          type: string
+          format: date-time
+      required:
+        - id
+        - codigo_inventario
+        - categoria_id
+        - marca
+        - modelo
+        - numero_serie
+        - estado
+        - creado_en
+    CreateEquipoDto:
+      type: object
+      properties:
+        codigo_inventario:
+          type: string
+        categoria_id:
+          type: string
+          format: uuid
+        marca:
+          type: string
+        modelo:
+          type: string
+        numero_serie:
+          type: string
+        estado:
+          $ref: '#/components/schemas/EstadoEquipo'
+      required:
+        - codigo_inventario
+        - categoria_id
+        - marca
+        - modelo
+        - numero_serie
+    SolicitudPrestamo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        usuario_id:
+          type: string
+          format: uuid
+        usuario:
+          $ref: '#/components/schemas/Usuario'
+        equipo_id:
+          type: string
+          format: uuid
+        equipo:
+          $ref: '#/components/schemas/Equipo'
+        estado:
+          $ref: '#/components/schemas/EstadoSolicitud'
+        motivo:
+          type: string
+        fecha_solicitud:
+          type: string
+          format: date-time
+        fecha_resolucion:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        resuelto_por:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        resolutor:
+          anyOf:
+            - $ref: '#/components/schemas/Usuario'
+            - type: 'null'
+      required:
+        - id
+        - usuario_id
+        - equipo_id
+        - estado
+        - motivo
+        - fecha_solicitud
+    CreateSolicitudDto:
+      type: object
+      properties:
+        equipo_id:
+          type: string
+          format: uuid
+        motivo:
+          type: string
+      required:
+        - equipo_id
+        - motivo
+    ResolverSolicitudDto:
+      type: object
+      properties:
+        estado:
+          type: string
+          enum:
+            - aprobada
+            - rechazada
+        comentario:
+          type: string
+      required:
+        - estado
+    Prestamo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        solicitud_id:
+          type: string
+          format: uuid
+        solicitud:
+          $ref: '#/components/schemas/SolicitudPrestamo'
+        usuario_id:
+          type: string
+          format: uuid
+        usuario:
+          $ref: '#/components/schemas/Usuario'
+        equipo_id:
+          type: string
+          format: uuid
+        equipo:
+          $ref: '#/components/schemas/Equipo'
+        encargado_entrega_id:
+          type: string
+          format: uuid
+        encargado_entrega:
+          $ref: '#/components/schemas/Usuario'
+        encargado_devolucion_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        encargado_devolucion:
+          anyOf:
+            - $ref: '#/components/schemas/Usuario'
+            - type: 'null'
+        fecha_inicio:
+          type: string
+          format: date-time
+        fecha_vencimiento:
+          type: string
+          format: date-time
+        renovado:
+          type: boolean
+        fecha_devolucion:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        estado:
+          $ref: '#/components/schemas/EstadoPrestamo'
+      required:
+        - id
+        - solicitud_id
+        - usuario_id
+        - equipo_id
+        - encargado_entrega_id
+        - fecha_inicio
+        - fecha_vencimiento
+        - renovado
+        - estado
+    SsoLoginDto:
+      type: object
+      properties:
+        token:
+          type: string
+      required:
+        - token
+    AuthResponseDto:
+      type: object
+      properties:
+        access_token:
+          type: string
+        usuario:
+          $ref: '#/components/schemas/Usuario'
+      required:
+        - access_token
+        - usuario
+    MetricasResumen:
+      type: object
+      properties:
+        total_equipos:
+          type: integer
+        equipos_disponibles:
+          type: integer
+        equipos_prestados:
+          type: integer
+        equipos_en_mantencion:
+          type: integer
+        prestamos_activos:
+          type: integer
+        prestamos_vencidos:
+          type: integer
+        solicitudes_pendientes:
+          type: integer
+      required:
+        - total_equipos
+        - equipos_disponibles
+        - equipos_prestados
+        - equipos_en_mantencion
+        - prestamos_activos
+        - prestamos_vencidos
+        - solicitudes_pendientes
+    RegistroAuditoria:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        usuario_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        accion:
+          type: string
+        entidad:
+          type: string
+        entidad_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        detalles:
+          type: object
+        creado_en:
+          type: string
+          format: date-time
+      required:
+        - id
+        - accion
+        - entidad
+        - creado_en
+    HealthCheckResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - status
+paths:
+  /api/v1/auth/sso-login:
+    post:
+      summary: Autenticación mediante SSO con Microsoft Entra ID
+      operationId: ssoLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SsoLoginDto'
+      responses:
+        '200':
+          description: Autenticación exitosa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponseDto'
+        '401':
+          description: Token no válido o no autorizado
+
+  /api/v1/auth/me:
+    get:
+      summary: Obtener perfil del usuario autenticado
+      operationId: getAuthMe
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Datos del usuario autenticado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '401':
+          description: No autorizado
+
+  /api/v1/categorias:
+    get:
+      summary: Listar todas las categorías de equipos
+      operationId: getCategorias
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de categorías
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Categoria'
+        '401':
+          description: No autorizado
+
+  /api/v1/equipos:
+    get:
+      summary: Listar inventario de equipos con filtros
+      operationId: getEquipos
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: categoria_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: estado
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/EstadoEquipo'
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista de equipos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Equipo'
+        '401':
+          description: No autorizado
+    post:
+      summary: Registrar nuevo equipo en inventario
+      operationId: createEquipo
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateEquipoDto'
+      responses:
+        '201':
+          description: Equipo creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Equipo'
+        '400':
+          description: Datos de entrada inválidos
+        '401':
+          description: No autorizado
+        '403':
+          description: Permisos insuficientes (requiere administrador_ti)
+
+  /api/v1/equipos/{id}:
+    get:
+      summary: Obtener detalle de un equipo específico
+      operationId: getEquipoById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Detalle del equipo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Equipo'
+        '401':
+          description: No autorizado
+        '404':
+          description: Equipo no encontrado
+
+  /api/v1/solicitudes:
+    get:
+      summary: Listar solicitudes de préstamo
+      operationId: getSolicitudes
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: estado
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/EstadoSolicitud'
+        - name: usuario_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lista de solicitudes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SolicitudPrestamo'
+        '401':
+          description: No autorizado
+    post:
+      summary: Crear solicitud de préstamo de equipo
+      operationId: createSolicitud
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSolicitudDto'
+      responses:
+        '201':
+          description: Solicitud creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolicitudPrestamo'
+        '400':
+          description: Datos de entrada inválidos
+        '401':
+          description: No autorizado
+
+  /api/v1/solicitudes/{id}/resolver:
+    patch:
+      summary: Aprobar o rechazar solicitud de préstamo
+      operationId: resolverSolicitud
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResolverSolicitudDto'
+      responses:
+        '200':
+          description: Solicitud resuelta correctamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolicitudPrestamo'
+        '400':
+          description: Solicitud ya resuelta o datos inválidos
+        '401':
+          description: No autorizado
+        '403':
+          description: Permisos insuficientes (requiere administrador_ti)
+        '404':
+          description: Solicitud no encontrada
+
+  /api/v1/prestamos:
+    get:
+      summary: Listar préstamos de equipos
+      operationId: getPrestamos
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: estado
+          in: query
+          required: false
+          schema:
+            $ref: '#/components/schemas/EstadoPrestamo'
+        - name: usuario_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Lista de préstamos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Prestamo'
+        '401':
+          description: No autorizado
+
+  /api/v1/prestamos/{id}/devolucion:
+    post:
+      summary: Registrar devolución de un equipo prestado
+      operationId: registrarDevolucionPrestamo
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Devolución registrada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prestamo'
+        '400':
+          description: El préstamo no se encuentra activo
+        '401':
+          description: No autorizado
+        '403':
+          description: Permisos insuficientes (requiere administrador_ti)
+        '404':
+          description: Préstamo no encontrado
+
+  /api/v1/prestamos/{id}/renovar:
+    post:
+      summary: Solicitar o aplicar renovación de período de préstamo
+      operationId: renovarPrestamo
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Préstamo renovado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prestamo'
+        '400':
+          description: El préstamo ya fue renovado previamente o se encuentra vencido
+        '401':
+          description: No autorizado
+        '404':
+          description: Préstamo no encontrado
+
+  /api/v1/metricas/resumen:
+    get:
+      summary: Obtener resumen numérico de métricas operacionales
+      operationId: getMetricasResumen
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Resumen de indicadores
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricasResumen'
+        '401':
+          description: No autorizado
+        '403':
+          description: Permisos insuficientes (requiere administrador_ti)
+
+  /api/v1/auditoria:
+    get:
+      summary: Listar registros de auditoría del sistema
+      operationId: getAuditoria
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: usuario_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: entidad
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Registros de auditoría
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RegistroAuditoria'
+        '401':
+          description: No autorizado
+        '403':
+          description: Permisos insuficientes (requiere administrador_ti)
+
+  /health:
+    get:
+      summary: Endpoint de verificación de estado y salud del servicio
+      operationId: getHealth
+      responses:
+        '200':
+          description: Servicio saludable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckResponse'
+
+  /metrics:
+    get:
+      summary: Métricas de Prometheus de la aplicación
+      operationId: getMetrics
+      responses:
+        '200':
+          description: Métricas en formato de texto estándar Prometheus
+          content:
+            text/plain:
+              schema:
+                type: string
