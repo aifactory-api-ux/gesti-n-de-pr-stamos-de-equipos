@@ -8,9 +8,9 @@
 - Expected implementation files: 89
 - Blocking items: 18/21 done
 - Failed items: 3
-- Requirements: 4/28 met
-- Fidelity: 14.3%
-- Abort reason: Retry budget exceeded for 16
+- Requirements: 3/28 met
+- Fidelity: 10.7%
+- Abort reason: none
 
 ## Outstanding findings
 
